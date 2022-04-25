@@ -4,7 +4,8 @@
 
 typedef std::uint64_t var;
 
-class mnt4753_libsnark {
+class mnt4753_libsnark
+{
 public:
   class groth16_input;
 
@@ -18,8 +19,8 @@ public:
 
   struct G2;
 
-    static G1 *read_pt_ECp(const var *mem);
-    static G2 *read_pt_ECpe(const var *mem);
+  static G1 *read_pt_ECp(const var *mem);
+  static G2 *read_pt_ECpe(const var *mem);
 
   struct vector_Fr;
 
@@ -32,7 +33,7 @@ public:
   static void print_G1(G1 *a);
   static void print_G1(vector_G1 *a);
   static void print_G2(G2 *a);
-  static void print_G2(vector_G2 *a, size_t i=0);
+  static void print_G2(vector_G2 *a, size_t i = 0);
 
   static evaluation_domain *get_evaluation_domain(size_t d);
 
@@ -90,8 +91,14 @@ public:
 
   static void groth16_output_write(G1 *A, G2 *B, G1 *C,
                                    const char *output_path);
+
+  static void as_affine_arrayG1(var *dst, vector_G1 *gvec);
+  static void as_affine_arrayG2(var *dst, vector_G2 *gvec);
+  static void as_norm_arrayFr(var *dst, vector_Fr *fvec);
+  static size_t get_sizeFr(vector_Fr *fvec);
 };
-class mnt6753_libsnark {
+class mnt6753_libsnark
+{
 public:
   class groth16_input;
 
@@ -105,8 +112,8 @@ public:
 
   struct G2;
 
-    static G1 *read_pt_ECp(const var *mem);
-    static G2 *read_pt_ECpe(const var *mem);
+  static G1 *read_pt_ECp(const var *mem);
+  static G2 *read_pt_ECpe(const var *mem);
 
   struct vector_Fr;
 
@@ -119,7 +126,7 @@ public:
   static void print_G1(G1 *a);
   static void print_G1(vector_G1 *a);
   static void print_G2(G2 *a);
-  static void print_G2(vector_G2 *a, size_t i=0);
+  static void print_G2(vector_G2 *a, size_t i = 0);
 
   static evaluation_domain *get_evaluation_domain(size_t d);
 
@@ -177,4 +184,9 @@ public:
 
   static void groth16_output_write(G1 *A, G2 *B, G1 *C,
                                    const char *output_path);
+
+  static void as_affine_arrayG1(var *dst, vector_G1 *gvec);
+  static void as_affine_arrayG2(var *dst, vector_G2 *gvec);
+  static void as_norm_arrayFr(var *dst, vector_Fr *fvec);
+  static size_t get_sizeFr(vector_Fr *fvec);
 };
