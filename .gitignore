@@ -1,5 +1,4 @@
 build
-depends
 simpledata
 data
 cuda_prover_piecewise
