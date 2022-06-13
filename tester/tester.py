@@ -1,4 +1,3 @@
-from json.tool import main
 import os
 import shutil
 import subprocess
@@ -70,6 +69,10 @@ class Profile:
         data['data_name'] = data_name
         data['method_name'] = method_name
         # data['unique_name'] = data_name+"-"+method_name
+        if 'Single Test G1' in parsed_dict.keys():
+            data['G1 Time'] = parsed_dict['Single Test G1']
+        elif 'Single Test G2' in parsed_dict.keys():
+            data['G2 Time'] = parsed_dict['Single Test G2']
         data['GPU Launch'] = parsed_dict.get('gpu launch')
         data['CPU1'] = parsed_dict.get('cpu 1')
         data['GPU Time'] = parsed_dict.get('gpu e2e')
@@ -277,7 +280,7 @@ class RunningItem:
                 with open(os.path.join(self.method.logs_dir, "running-log.txt"), "w") as log:
                     t = time.time()
                     out = self.method.execute(self.data.curve, i)
-                    self._stdouts.append(out)
+                    # self._stdouts.append(out)
                     log.write("%f\n" % (time.time()-t))
                     checksum = call_foroutput(
                         "sha256sum output-%d" % i).split(' ')[0]
@@ -290,6 +293,7 @@ class RunningItem:
 
     def read_output(self) -> None:
         os.chdir(self.data.work_dir)
+        self._stdouts = []
         for i in range(0, self.data.test_times):
             with open(os.path.join(self.method.logs_dir, "stdout-%d.txt" % i), "r") as f:
                 out = f.read()
@@ -307,11 +311,15 @@ class RunningItem:
 class TestSuit:
     def __init__(self) -> None:
         dataconfigs = [
-            #DataConfig("MNT6753", 15, 1),
+            DataConfig("MNT6753", 15, 1),
+            DataConfig("MNT6753", 16, 1),
             DataConfig("MNT4753", 15, 1),
+            DataConfig("MNT4753", 16, 1),
+            #DataConfig("MNT4753", 17, 1),
+            #DataConfig("MNT4753", 18, 1),
         ]
         methods = [
-            #MethodConfig("cpu"),
+            MethodConfig("cpu"),
             MethodConfig("straus", 5, 32),
             #MethodConfig("pippenger", 6),
             MethodConfig("pippenger", 7),
@@ -322,23 +330,7 @@ class TestSuit:
         self.items: List[RunningItem] = []
         for d in dataconfigs:
             for m in methods:
-                #pass
                 self.items.append(RunningItem(d, m))
-        dataconfigs = [
-            DataConfig("MNT4753", 18, 1)
-        ]
-        methods = [
-            MethodConfig("cpu"),
-            MethodConfig("pippenger", 6),
-            MethodConfig("pippenger", 7),
-            MethodConfig("pippenger", 8),
-            MethodConfig("pippenger", 9),
-            MethodConfig("pippenger", 10)
-        ]
-        for d in dataconfigs:
-            for m in methods:
-                pass
-                #self.items.append(RunningItem(d, m))
 
     def run(self) -> None:
         for it in self.items:
@@ -359,4 +351,4 @@ class TestSuit:
 if __name__ == "__main__":
     suit = TestSuit()
     suit.run()
-    #suit.profile_only()
+    # suit.profile_only()

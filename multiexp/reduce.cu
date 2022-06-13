@@ -611,7 +611,7 @@ template <typename EC, int C>
 void prescan(var *idxbuf, var *searr, const var *norm_exp, size_t N)
 {
     /*
-        duplicated!
+        duplicated
         初版方案使用最暴力方式执行prescan，经常导致CPU成为性能瓶颈
     */
     static constexpr unsigned MAX_WIN_IDX = (753 + C - 1) / C;
@@ -748,42 +748,3 @@ void ec_reduce_test2(cudaStream_t &strm, var *out, var *multiples, const var *sc
     ec_reduce_aff2jac<EC>(strm, tmp.get(), multiples, scalars, N);
     ec_cpy_jac2jac_async<EC>(strm, out, tmp.get(), 1);
 }
-
-/*
-template <typename EC, int C>
-void ec_reduce_pippenger_sync(cudaStream_t &strm, var *out, const var *multiples, ExponentVec *expvec, size_t N, std::mutex *launched = nullptr)
-{
-    // multiples和out应当被分配在GPU上
-    // norm_exp应当被分配在CPU上
-    static constexpr unsigned MAX_WIN_IDX = (753 + C - 1) / C;
-    static constexpr var WIN_SIZE = 1ULL << C;
-    //    static constexpr var C_MASK = WIN_SIZE - 1;
-
-    auto begin = std::chrono::high_resolution_clock::now();
-
-    // cudaStream_t strm;
-    cudaError_t e;
-    // cudaStreamCreate(&strm);
-
-    ec_reduce_pippenger_unify<EC, C>(strm, out, multiples, expvec->idxbuf, expvec->searr, N);
-    if (launched != nullptr)
-    {
-        launched->unlock();
-    }
-    my_print_time(begin, "GPU Launched");
-    e = cudaStreamSynchronize(strm);
-    if (e != 0)
-        printf("reduce %d %s\n", e, cudaGetErrorString(e));
-    cudaFree(cpu_idxbuf);
-    cudaFree(cpu_searr);
-    cudaFree(idxbuf);
-    cudaFree(searr);
-    my_print_time(begin, "GPU Finished");
-}
-*/
-/*
-template <typename EC, typename B, int C>
-void gpu_multiexpG1_sync(typename B::G1 *ret, typename B::vector_Fr *svec, typename B::vector_G1 *gvec,
-                         size_t N, var *compared_mults){
-
-                         }*/

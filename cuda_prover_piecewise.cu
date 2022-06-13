@@ -50,7 +50,7 @@ typename B::vector_Fr *compute_H(size_t d, typename B::vector_Fr *ca,
                                  typename B::vector_Fr *cb,
                                  typename B::vector_Fr *cc)
 {
-    //TODO: 并行实现domain_iFFT,domain_cosetFFT,domain_cosetiFFT
+    // TODO: 并行实现domain_iFFT,domain_cosetFFT,domain_cosetiFFT
     auto domain = B::get_evaluation_domain(d + 1);
 
     B::domain_iFFT(domain, ca);
@@ -104,7 +104,7 @@ template <typename B, int C>
 class ExponentVec
 {
 public:
-    std::mutex mtx; //保证线程安全
+    std::mutex mtx;
     typedef typename B::vector_Fr vector_Fr;
     vector_Fr *vec;
     var *norm_exp;
@@ -168,7 +168,7 @@ public:
         if (!normAlloced)
         {
             size_t vecN = B::get_sizeFr(vec);
-            // TODO:: validNormexp完全根据vec的长度进行计算
+            //validNormexp完全根据vec的长度进行计算
             //当vec与N不匹配时不得不申请额外的空间避免越界
             printf("Malloc for NormExp %lu Bytes\n", vecN * ELT_BYTES);
             norm_exp = (var *)malloc(vecN * ELT_BYTES);
@@ -253,33 +253,14 @@ public:
 
     var *get_idxbuf()
     {
-        /*
-        //返回的为一份copy，调用者应当销毁返回的指针
-        var *ret;
-        cudaError_t e = cudaMallocManaged(&ret, idxbuf_size(), cudaMemAttachHost);
-        if (e != 0)
-            printf("malloc %luB %d %s\n", idxbuf_size(), e, cudaGetErrorString(e));
-        memcpy(ret, idxbuf, idxbuf_size());
-        return ret;
-        */
         return idxbuf;
     }
     var *get_searr()
     {
-        /*
-        //返回的为一份copy，调用者应当销毁返回的指针
-        var *ret;
-        cudaError_t e = cudaMallocManaged(&ret, searr_size, cudaMemAttachHost);
-        if (e != 0)
-            printf("malloc %luB %d %s\n", searr_size, e, cudaGetErrorString(e));
-        memcpy(ret, searr, searr_size);
-        return ret;
-        */
         return searr;
     }
     ~ExponentVec()
     {
-        // ExponentVec销毁时将销毁所有由它申请的数据
         if (vecOccupied)
             B::delete_vector_Fr(vec);
         if (normOccupied)
@@ -503,6 +484,9 @@ void run_prover(
     ec_reduce_straus<ECpe, C, 2 * R>(sB2, out_B2.get(), B2_mults.get(), w, m + 1);
     ec_reduce_straus<ECp, C, R>(sL, out_L.get(), L_mults.get(), w + (primary_input_size + 1) * ELT_LIMBS, m - 1);
 
+    //cudaDeviceSynchronize();
+    //print_time(t, "Single Test G2");
+    //exit(0);
     // ec_reduce_test<ECp, C, R>(sB1, out_B1.get(), B1_mults.get(), w, m + 1);
     // ec_reduce_test<ECpe, C, 2 * R>(sB2, out_B2.get(), B2_mults.get(), w, m + 1);
     // ec_reduce_test<ECp, C, R>(sL, out_L.get(), L_mults.get(), w + (primary_input_size + 1) * ELT_LIMBS, m - 1);
@@ -630,6 +614,9 @@ void run_prover_pippenger(
     print_time(t, "sL Valid");
 
     std::thread tB2(gpu_funcs<B, C>::multiexpG2_sync, std::ref(evaluation_Bt2), &expvecW, B::params_B2(params), m + 1, &barrier);
+    //tB2.join();
+    //print_time(t, "Single Test G2");
+    //exit(0);
     std::thread tB1(gpu_funcs<B, C>::multiexpG1_sync, std::ref(evaluation_Bt1), &expvecW, B::params_B1(params), m + 1, &barrier);
     std::thread tL(gpu_funcs<B, C>::multiexpG1_sync, std::ref(evaluation_Lt), &expvecL, B::params_L(params), m - 1, &barrier);
     std::thread tA(gpu_funcs<B, C>::multiexpG1_sync, std::ref(evaluation_At), &expvecW, B::params_A(params), m + 1, &barrier);
@@ -642,19 +629,19 @@ void run_prover_pippenger(
     // GPU Launch成功后才进行CPU计算，避免抢占CPU资源
     print_time(t, "gpu launch");
     // evaluation_At = B::multiexp_G1(B::input_w(inputs), B::params_A(params), m + 1);
-    //  evaluation_Bt1 = B::multiexp_G1(B::input_w(inputs), B::params_B1(params), m + 1);
-    //  evaluation_Bt2 = B::multiexp_G2(B::input_w(inputs), B::params_B2(params), m + 1);
+    // evaluation_Bt1 = B::multiexp_G1(B::input_w(inputs), B::params_B1(params), m + 1);
+    // evaluation_Bt2 = B::multiexp_G2(B::input_w(inputs), B::params_B2(params), m + 1);
 
     // Do calculations relating to H on CPU after having set the GPU in
     // motion
     auto H = B::params_H(params);
     auto coefficients_for_H =
         compute_H<B>(d, B::input_ca(inputs), B::input_cb(inputs), B::input_cc(inputs));
-    // ExponentVec<B, C> expvecH(coefficients_for_H, d);
-    // expvecH.validScan();
-    // std::thread tH(gpu_funcs<B, C>::multiexpG1_sync, std::ref(evaluation_Ht), &expvecH, H, d, &barrier);
-    // barrier.wait();
-    evaluation_Ht = B::multiexp_G1(coefficients_for_H, H, d);
+    ExponentVec<B, C> expvecH(coefficients_for_H, d);
+    expvecH.validScan();
+    std::thread tH(gpu_funcs<B, C>::multiexpG1_sync, std::ref(evaluation_Ht), &expvecH, H, d, &barrier);
+    barrier.wait();
+    // evaluation_Ht = B::multiexp_G1(coefficients_for_H, H, d);
 
     print_time(t, "cpu 1");
 
@@ -662,7 +649,7 @@ void run_prover_pippenger(
     tB2.join();
     tL.join();
     tA.join();
-    // tH.join();
+    tH.join();
 
     print_time(t_gpu, "gpu e2e");
 
